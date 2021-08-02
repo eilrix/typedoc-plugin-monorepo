@@ -135,11 +135,17 @@ export class ExternalModuleMapPlugin extends ConverterComponent {
     });
 
     this.modules.forEach((name: string) => {
-      let ref = refsArray
-        .filter(ref => ref.name === name)
-        .find(ref => path.isAbsolute(ref.originalName)) as ContainerReflection;
-      let root = ref.originalName.replace(new RegExp(`${name}.*`, "gi"), name);
+      // Find README in package root and append to the module
       try {
+        const ref = refsArray
+          .filter(ref => ref.name === name)
+          .find(ref => path.isAbsolute(ref.originalName) ||
+            path.isAbsolute((ref as any).escapedName?.replace(/^\"+|\"+$/g, ''))) as ContainerReflection;
+
+        const refPath = path.isAbsolute(ref.originalName) ? ref.originalName :
+          (ref as any).escapedName.replace(/^\"+|\"+$/g, '');
+        const root = refPath.replace(new RegExp(`${name}.*`, "gi"), name);
+
         // tslint:disable-next-line ban-types
         Object.defineProperty(ref, "kindString", {
           get() {
